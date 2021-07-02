@@ -24,16 +24,17 @@ type Sphere struct {
 var dc gg.Context // graphics context
 
 var spheres [3]Sphere          // spheres in scene
-var Cw, Ch float64             // canvas
+var Cw, Ch int                 // canvas
 var Vw, Vh float64             // viewport
 var projection_plane_d float64 // projection plane
 var origin Point               // origin
 var BACKGROUND_COLOR Color
 
 // ok
-func CanvasToViewport(x, y float64) Vector {
-	newX := x * Vw / Cw
-	newY := y * Vh / Ch
+func CanvasToViewport(x, y int) Vector {
+	var newX, newY float64
+	newX = float64(x) * Vw / float64(Cw)
+	newY = float64(y) * Vh / float64(Ch)
 	return Vector{newX, newY, projection_plane_d}
 }
 
@@ -41,6 +42,7 @@ func CanvasToViewport(x, y float64) Vector {
 func PutPixel(x, y int, color Color) {
 	dc.SetRGB255(color.r, color.g, color.b)
 	dc.SetPixel(x+512, y+512) // fixme: +512 hack?
+	//dc.SetPixel(x, y)
 }
 
 // ok
@@ -91,7 +93,7 @@ func main() {
 	Vw, Vh = 1, 1 // 1 x 1
 	projection_plane_d = 1
 	origin = Point{0, 0, 0}
-	BACKGROUND_COLOR = Color{0, 0, 0}
+	BACKGROUND_COLOR = Color{255, 255, 255}
 
 	// spheres
 	spheres[0].center = Point{0, -1, 3}
@@ -106,14 +108,13 @@ func main() {
 	spheres[2].radius = 1
 	spheres[2].color = Color{0, 255, 0} // green
 
-	const S = 1024
+	// create context
+	dc = *gg.NewContext(Cw, Ch)
 
-	fmt.Println("creating context")
-	dc = *gg.NewContext(S, S)
-
-	fmt.Println("redering image")
+	// render image
+	fmt.Println("rendering image")
 	for x := -Cw / 2.0; x < Cw/2.0; x++ {
-		for y := -Ch / 2; y < Ch/2; y++ {
+		for y := -Ch / 2.0; y < Ch/2.0; y++ {
 			D := CanvasToViewport(x, y)
 			color := TraceRay(origin, D, 1, math.Inf(1))
 			PutPixel(int(x), int(y), color)
@@ -121,6 +122,7 @@ func main() {
 
 	}
 
+	// save it
 	fmt.Println("saving image")
 	dc.SavePNG("out.png")
 }
