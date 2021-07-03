@@ -40,9 +40,10 @@ func CanvasToViewport(x, y int) Vector {
 
 // ok
 func PutPixel(x, y int, color Color) {
+	newX := Cw/2 + x
+	newY := Ch/2 - y - 1
 	dc.SetRGB255(color.r, color.g, color.b)
-	dc.SetPixel(x+512, y+512) // fixme: +512 hack?
-	//dc.SetPixel(x, y)
+	dc.SetPixel(newX, newY)
 }
 
 // ok
