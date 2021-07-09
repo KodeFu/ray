@@ -3,7 +3,7 @@
 Ray is a ray tracer in Go.
 
 ## Features
-Currently we simply render a few spheres floating in 3D space. They still look flat since lighting is not yet implemented.
+Currently we simply render a few spheres floating in 3D space.
 
 ## Build / Run
 > go run .
