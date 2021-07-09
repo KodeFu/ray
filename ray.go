@@ -21,6 +21,13 @@ type Sphere struct {
 	color  Color
 }
 
+type Light struct {
+	ltype     string
+	intesity  float64
+	position  Point
+	direction Vector
+}
+
 var dc gg.Context // graphics context
 
 var spheres [3]Sphere          // spheres in scene
@@ -28,7 +35,8 @@ var Cw, Ch int                 // canvas
 var Vw, Vh float64             // viewport
 var projection_plane_d float64 // projection plane
 var origin Point               // origin
-var BACKGROUND_COLOR Color
+var BACKGROUND_COLOR Color     // background color
+var lights [3]Light            // lights in scene
 
 // ok
 func CanvasToViewport(x, y int) Vector {
@@ -86,7 +94,63 @@ func TraceRay(O Point, D Vector, t_min, t_max float64) Color {
 		return BACKGROUND_COLOR
 	}
 
-	return spheres[closest_sphere].color
+	// Compute intersection
+	var P Vector
+	P.X = O.x + D.MultiplyByScalar(closest_t).X
+	P.Y = O.y + D.MultiplyByScalar(closest_t).Y
+	P.Z = O.z + D.MultiplyByScalar(closest_t).Z
+
+	// Compute sphere normal at intersection
+	var N Vector
+	N.X = P.X - spheres[closest_sphere].center.x
+	N.Y = P.Y - spheres[closest_sphere].center.y
+	N.Z = P.Z - spheres[closest_sphere].center.z
+
+	N.X = N.X / N.Length()
+	N.Y = N.Y / N.Length()
+	N.Z = N.Z / N.Length()
+
+	var passedInPoint Point
+	passedInPoint.x = P.X
+	passedInPoint.y = P.Y
+	passedInPoint.z = P.Z
+	computedLighting := ComputeLighting(passedInPoint, N)
+
+	var finalColor Color
+	finalColor.r = int(float64(spheres[closest_sphere].color.r) * computedLighting)
+	finalColor.g = int(float64(spheres[closest_sphere].color.g) * computedLighting)
+	finalColor.b = int(float64(spheres[closest_sphere].color.b) * computedLighting)
+
+	return finalColor
+}
+
+func ComputeLighting(P Point, N Vector) float64 {
+	var L Vector
+	var i float64
+	for _, light := range lights {
+		if light.ltype == "ambient" {
+			i += light.intesity
+		} else {
+			if light.ltype == "point" {
+				//L := light.position - P
+				L.X = light.position.x - P.x
+				L.Y = light.position.y - P.y
+				L.Z = light.position.z - P.z
+			} else {
+				//L := light.direction
+				L.X = light.direction.X
+				L.Y = light.direction.Y
+				L.Z = light.direction.Z
+			}
+
+			n_dot_l := N.Dot(L)
+			if n_dot_l > 0 {
+				i += light.intesity * n_dot_l / (N.Length() * L.Length())
+			}
+		}
+	}
+
+	return i
 }
 
 func main() {
@@ -108,6 +172,17 @@ func main() {
 	spheres[2].center = Point{-2, 0, 4}
 	spheres[2].radius = 1
 	spheres[2].color = Color{0, 255, 0} // green
+
+	lights[0].ltype = "ambient"
+	lights[0].intesity = 0.2
+
+	lights[1].ltype = "point"
+	lights[1].intesity = 0.6
+	lights[1].position = Point{2, 1, 0}
+
+	lights[2].ltype = "directional"
+	lights[2].intesity = 0.2
+	lights[2].direction = Vector{1, 4, 4}
 
 	// create context
 	dc = *gg.NewContext(Cw, Ch)
